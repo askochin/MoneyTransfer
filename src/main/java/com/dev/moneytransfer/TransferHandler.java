@@ -1,26 +1,33 @@
 package com.dev.moneytransfer;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.eclipse.jetty.http.HttpStatus;
 import spark.Request;
 import spark.Response;
 import spark.Route;
 
-import static spark.Spark.get;
-import static spark.Spark.port;
-import static spark.Spark.post;
+import java.math.BigDecimal;
 
+
+@Singleton
 public class TransferHandler implements Route {
 
-    @Override
-    public Object handle(Request request, Response response) {
+    private final TransferService service;
 
-        try {
-            return "!!!!!!!";
-        } catch (IllegalArgumentException ex) {
-            response.status(HttpStatus.BAD_REQUEST_400);
-            ex.printStackTrace();
-            return ex.getMessage();
-        }
+    @Inject
+    TransferHandler(TransferService service) {
+        this.service = service;
+    }
+
+    @Override
+    public String handle(Request request, Response response) {
+        String acctFrom = request.params(":fromAccount");
+        String acctTo = request.params(":fromTo");
+        BigDecimal sum = BigDecimal.valueOf(request.attribute("sum"));
+        service.transfer(acctFrom, acctTo, sum);
+        response.status(HttpStatus.OK_200);
+        return "";
     }
 }
 
