@@ -7,6 +7,8 @@ import org.jdbi.v3.core.Jdbi;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.jdbi.v3.core.transaction.TransactionIsolationLevel.READ_COMMITTED;
+
 @Singleton
 public class TransferDao {
 
@@ -17,8 +19,9 @@ public class TransferDao {
         this.jdbi = jdbi;
     }
 
-    public boolean transfer(String acctFrom, String acctTo, BigDecimal sum) {
-        return jdbi.inTransaction(handle -> {
+    public Long transfer(String acctFrom, String acctTo, BigDecimal sum) {
+
+        return jdbi.inTransaction(READ_COMMITTED, handle -> {
 
             int updatedCount = handle
                     .createUpdate(
@@ -32,13 +35,19 @@ public class TransferDao {
             if (updatedCount > 2) {
                 throw new IllegalStateException("Tried updating more than 2 accounts");
             }
-            if (updatedCount == 2) {
-                handle.commit();
-                return true;
-            } else {
+            if (updatedCount < 2) {
                 handle.rollback();
-                return false;
+                return null;
             }
+
+            return handle.createUpdate(
+                            "INSERT INTO Transfer(SourceAccountId, DestAccountId, Sum) " +
+                            "VALUES(:acctFrom, :acctTo, :sum)")
+                    .bind("acctFrom", acctFrom)
+                    .bind("acctTo", acctTo)
+                    .bind("sum", sum)
+                    .executeAndReturnGeneratedKeys("TransferId")
+                    .mapTo(Long.class).findOnly();
         });
     }
 

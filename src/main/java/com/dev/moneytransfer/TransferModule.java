@@ -1,13 +1,18 @@
 package com.dev.moneytransfer;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import org.jdbi.v3.core.Jdbi;
 
+import java.io.IOException;
+
 public class TransferModule extends AbstractModule {
 
-    private static final String JDBC_URL_IN_MEMORY_H2 = "jdbc:h2:mem:accts";
+    private static final String JDBC_URL_IN_MEMORY_H2 =
+            "jdbc:h2:mem:accts;DB_CLOSE_DELAY=-1";
 
     private final String jdbcUrl;
 
@@ -22,11 +27,14 @@ public class TransferModule extends AbstractModule {
 
     @Provides
     @Singleton
-    private Jdbi provideObjectMapper() {
-        Jdbi jdbi = Jdbi.create(jdbcUrl);
-        if (JDBC_URL_IN_MEMORY_H2.equals(jdbcUrl)) {
-            DbUtils.initDbStructure(jdbi);
-        }
+    private Jdbi provideObjectMapper() throws IOException {
+        Jdbi jdbi = Jdbi.create(JDBC_URL_IN_MEMORY_H2);
+        jdbi.useHandle(handle -> handle.createScript(
+                Resources.toString(Resources.getResource("init.sql"), Charsets.UTF_8)
+                ).execute()
+        );
+
+        //DbUtils.initDbStructure(jdbi);
         return jdbi;
     }
 }

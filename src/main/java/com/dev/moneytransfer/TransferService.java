@@ -1,14 +1,16 @@
 package com.dev.moneytransfer;
 
-import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.math.RoundingMode;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Stream.of;
 
 @Singleton
 public class TransferService {
@@ -22,34 +24,51 @@ public class TransferService {
         this.dao = dao;
     }
 
-    public void transfer(String acctFrom, String acctTo, BigDecimal sum) {
+    public Long transfer(String acctFrom, String acctTo, BigDecimal sum) {
+
+        requireNonNull(acctFrom, "acctFrom");
+        requireNonNull(acctTo, "acctTo");
+        requireNonNull(sum, "sum");
+
+        sum = sum.setScale(2, RoundingMode.HALF_UP);
+        if (sum.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Negative or zero sum");
+        }
+
         int compareResult = acctFrom.compareTo(acctTo);
         if (compareResult == 0) {
-            throw new IllegalArgumentException("The same account");
+            throw new IllegalArgumentException("Equal accounts");
         }
-        boolean transferred;
+
+        Long transferId;
         if (compareResult < 0) {
             synchronized (getLock(acctFrom)) {
                 synchronized (getLock(acctTo)) {
-                    transferred = dao.transfer(acctFrom, acctTo, sum);
+                    transferId = dao.transfer(acctFrom, acctTo, sum);
                 }
             }
         } else {
             synchronized (getLock(acctTo)) {
                 synchronized (getLock(acctFrom)) {
-                    transferred = dao.transfer(acctFrom, acctTo, sum);
+                    transferId = dao.transfer(acctFrom, acctTo, sum);
                 }
             }
         }
-        if (!transferred) {
-            List<String> existingAccts = dao.getExistingAccountsOf(acctFrom, acctTo);
-            if (!existingAccts.contains(acctFrom)) {
 
+        if (transferId == null) {
+            List<String> existingAccts = dao.getExistingAccountsOf(acctFrom, acctTo);
+            String notFoundAccts = of(acctFrom, acctTo).filter(acct -> !existingAccts.contains(acct)).collect(joining(", "));
+            if (!notFoundAccts.isEmpty()) {
+                throw new IllegalArgumentException("Account not found: " + notFoundAccts);
             }
+            throw new IllegalArgumentException("Not sufficient funds");
         }
+
+        return transferId;
     }
 
     private Object getLock(String acct) {
-        return locks.putIfAbsent(acct, acct);
+        Object lock = locks.putIfAbsent(acct, acct);
+        return lock == null ? acct : lock;
     }
 }
