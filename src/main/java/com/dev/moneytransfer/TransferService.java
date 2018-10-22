@@ -2,6 +2,8 @@ package com.dev.moneytransfer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -9,11 +11,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Stream.of;
 
 @Singleton
 public class TransferService {
+
+    private static final Logger log = LoggerFactory.getLogger(TransferService.class);
 
     private final Map<String, Object> locks = new ConcurrentHashMap<>();
 
@@ -24,15 +26,15 @@ public class TransferService {
         this.dao = dao;
     }
 
-    public Long transfer(String acctFrom, String acctTo, BigDecimal sum) {
+    public Long transfer(String acctFrom, String acctTo, BigDecimal amount) {
 
         requireNonNull(acctFrom, "acctFrom");
         requireNonNull(acctTo, "acctTo");
-        requireNonNull(sum, "sum");
+        requireNonNull(amount, "amount");
 
-        sum = sum.setScale(2, RoundingMode.HALF_UP);
-        if (sum.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Negative or zero sum");
+        amount = amount.setScale(2, RoundingMode.HALF_UP);
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Negative or zero amount");
         }
 
         int compareResult = acctFrom.compareTo(acctTo);
@@ -40,30 +42,21 @@ public class TransferService {
             throw new IllegalArgumentException("Equal accounts");
         }
 
-        Long transferId;
+        long transferId;
         if (compareResult < 0) {
             synchronized (getLock(acctFrom)) {
                 synchronized (getLock(acctTo)) {
-                    transferId = dao.transfer(acctFrom, acctTo, sum);
+                    transferId = dao.transfer(acctFrom, acctTo, amount);
                 }
             }
         } else {
             synchronized (getLock(acctTo)) {
                 synchronized (getLock(acctFrom)) {
-                    transferId = dao.transfer(acctFrom, acctTo, sum);
+                    transferId = dao.transfer(acctFrom, acctTo, amount);
                 }
             }
         }
-
-        if (transferId == null) {
-            List<String> existingAccts = dao.getExistingAccountsOf(acctFrom, acctTo);
-            String notFoundAccts = of(acctFrom, acctTo).filter(acct -> !existingAccts.contains(acct)).collect(joining(", "));
-            if (!notFoundAccts.isEmpty()) {
-                throw new IllegalArgumentException("Account not found: " + notFoundAccts);
-            }
-            throw new IllegalArgumentException("Not sufficient funds");
-        }
-
+        log.info("Transfer %s of %s from %s to %s", transferId, amount, acctFrom, acctTo);
         return transferId;
     }
 

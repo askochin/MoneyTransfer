@@ -2,7 +2,6 @@ package com.dev.moneytransfer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
@@ -10,6 +9,8 @@ import spark.Response;
 import spark.Route;
 
 import java.math.BigDecimal;
+
+import static java.lang.String.valueOf;
 
 
 @Singleton
@@ -29,23 +30,24 @@ public class TransferHandler implements Route {
         try {
             String acctFrom = request.params(":fromAccount");
             String acctTo = request.params(":toAccount");
-            String sumAttr = request.queryParams("sum");
-            if (sumAttr == null) {
-                throw new IllegalArgumentException("Missing sum attribute");
+            String amountAttr = request.queryParams("amount");
+            if (amountAttr == null) {
+                throw new IllegalArgumentException("Missing amount param");
             }
 
-            BigDecimal sum;
+            BigDecimal amount;
             try {
-                sum = new BigDecimal(sumAttr);
+                amount = new BigDecimal(amountAttr);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Incorrect sum: '" + sumAttr + "'");
+                throw new IllegalArgumentException("Incorrect amount: '" + amountAttr + "'");
             }
 
-            Long transferId = service.transfer(acctFrom, acctTo, sum);
+            long transferId = service.transfer(acctFrom, acctTo, amount);
             response.status(200);
-            return transferId.toString();
+            return valueOf(transferId);
         }
         catch (IllegalArgumentException ex) {
+            log.warn("Illegal transfer request: " + ex.getMessage());
             response.status(400);
             return ex.getMessage();
         }
