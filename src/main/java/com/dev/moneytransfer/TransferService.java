@@ -55,14 +55,7 @@ public class TransferService {
             }
         }
 
-        if (transferId == null) {
-            List<String> existingAccts = dao.getExistingAccountsOf(acctFrom, acctTo);
-            String notFoundAccts = of(acctFrom, acctTo).filter(acct -> !existingAccts.contains(acct)).collect(joining(", "));
-            if (!notFoundAccts.isEmpty()) {
-                throw new IllegalArgumentException("Account not found: " + notFoundAccts);
-            }
-            throw new IllegalArgumentException("Not sufficient funds");
-        }
+
 
         return transferId;
     }

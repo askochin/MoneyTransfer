@@ -1,21 +1,22 @@
 package com.dev.moneytransfer;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import spark.utils.IOUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static spark.Spark.awaitInitialization;
 import static spark.Spark.stop;
 
 public class ApplicationTest {
 
-    @org.junit.Test
+    @Test
     public void run() {
         String testUrl = "/transfer/a1/a2?sum=31.43";
 
@@ -24,14 +25,14 @@ public class ApplicationTest {
         assertEquals("1", res.body);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         Application app = new Application();
         app.run(7687);
         awaitInitialization();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         stop();
     }

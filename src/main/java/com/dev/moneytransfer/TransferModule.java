@@ -30,7 +30,7 @@ public class TransferModule extends AbstractModule {
     private Jdbi provideObjectMapper() throws IOException {
         Jdbi jdbi = Jdbi.create(JDBC_URL_IN_MEMORY_H2);
         jdbi.useHandle(handle -> handle.createScript(
-                Resources.toString(Resources.getResource("init.sql"), Charsets.UTF_8)
+                Resources.toString(Resources.getResource("src/test/resources/init.sql"), Charsets.UTF_8)
                 ).execute()
         );
 
