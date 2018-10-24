@@ -11,7 +11,7 @@ public class Application {
 
     public void run(final int port) {
 
-        TransferHandler transferHandler = Guice.createInjector(new TransferModule("jdbc:h2:mem:accts"))
+        TransferHandler transferHandler = Guice.createInjector(new TransferModule("jdbc:h2:mem:accts", 10))
                 .getInstance(TransferHandler.class);
 
         port(port);

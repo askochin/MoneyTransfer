@@ -1,4 +1,4 @@
-package com.dev.moneytransfer.dao;
+package com.dev.moneytransfer.dao.helper;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

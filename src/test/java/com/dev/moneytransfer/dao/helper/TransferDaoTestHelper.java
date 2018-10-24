@@ -1,11 +1,10 @@
-package com.dev.moneytransfer.dao;
+package com.dev.moneytransfer.dao.helper;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
