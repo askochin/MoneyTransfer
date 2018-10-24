@@ -29,7 +29,7 @@ public class TransferDaoTest {
         Jdbi jdbi = Jdbi.create("jdbc:h2:mem:accts;DB_CLOSE_DELAY=-1;MULTI_THREADED=TRUE");
         transferDao = new TransferDao(jdbi);
         helper = new TransferDaoTestHelper(jdbi);
-        helper.initDb("schema.sql");
+        helper.initSchema();
         helper.addAccounts(initAcounts);
     }
 
