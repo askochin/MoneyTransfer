@@ -67,7 +67,6 @@ public class TransferService {
     }
 
     private Object getLock(String acct) {
-        Object lock = locks.putIfAbsent(acct, new Object());
-        return lock == null ? acct : lock;
+        return locks.computeIfAbsent(acct, a -> new Object());
     }
 }
