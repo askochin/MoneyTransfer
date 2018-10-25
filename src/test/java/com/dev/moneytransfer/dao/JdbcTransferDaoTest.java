@@ -1,8 +1,5 @@
-package com.dev.moneytransfer;
+package com.dev.moneytransfer.dao;
 
-import com.dev.moneytransfer.dao.Account;
-import com.dev.moneytransfer.dao.Transfer;
-import com.dev.moneytransfer.dao.TransferDaoTestHelper;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,9 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.*;
 
-public class TransferDaoTest {
+public class JdbcTransferDaoTest {
 
-    private TransferDao transferDao;
+    private JdbcTransferDao transferDao;
     private TransferDaoTestHelper helper;
 
     private final Account[] initAcounts = {acct("a1", "100.00"), acct("a2", "200.00"), acct("a3", "300.00")};
@@ -27,7 +24,7 @@ public class TransferDaoTest {
     @BeforeEach
     public void prepareTest() throws IOException {
         Jdbi jdbi = Jdbi.create("jdbc:h2:mem:accts;DB_CLOSE_DELAY=-1;MULTI_THREADED=TRUE");
-        transferDao = new TransferDao(jdbi);
+        transferDao = new JdbcTransferDao(jdbi);
         helper = new TransferDaoTestHelper(jdbi);
         helper.initSchema();
         helper.addAccounts(initAcounts);

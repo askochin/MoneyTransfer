@@ -2,10 +2,10 @@ package com.dev.moneytransfer;
 
 import com.dev.moneytransfer.dao.Account;
 import com.dev.moneytransfer.dao.TransferDaoTestHelper;
-import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import spark.Spark;
 import spark.utils.IOUtils;
 
 import java.io.IOException;
@@ -13,17 +13,17 @@ import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static com.dev.moneytransfer.DbUtil.INTERNAL_SCRIPT;
-import static java.lang.Integer.parseInt;
+import static com.google.common.io.Resources.getResource;
 import static java.lang.String.valueOf;
-import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
+import static org.jdbi.v3.core.Jdbi.create;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static spark.Spark.awaitInitialization;
+import static spark.Spark.awaitStop;
 import static spark.Spark.stop;
 
-public class ApplicationTest {
+public class ApplicationIntegrationTest {
 
     private static final int PORT = 9797;
     private static final String JDBC_URL = "jdbc:h2:mem:accts;DB_CLOSE_DELAY=-1;MULTI_THREADED=TRUE";
@@ -38,13 +38,23 @@ public class ApplicationTest {
         assertEquals("1", res.body);
     }
 
+    @Test
+    public void shouldHandleBadRequest() {
+
+        String url = "/transfer/a1/unknown?amount=31.43";
+
+        TestResponse res = request("POST", url);
+        assertEquals(400, res.status);
+        assertEquals("Account not found: unknown", res.body);
+    }
+
     @BeforeEach
     public void setUp() {
 
         // init application properties
         setProperty("port", valueOf(PORT));
         setProperty("jdbc.url", JDBC_URL);
-        setProperty("db.init.script", INTERNAL_SCRIPT);
+        setProperty("db.init.script", getResource("schema.sql").getPath());
         setProperty("connection.pool.max.size", "100");
 
         // run application
@@ -53,13 +63,15 @@ public class ApplicationTest {
         awaitInitialization();
 
         // add test data
-        new TransferDaoTestHelper(Jdbi.create(JDBC_URL))
+        new TransferDaoTestHelper(create(JDBC_URL))
                 .addAccounts(new Account("a1", new BigDecimal("100")), new Account("a2", new BigDecimal("200")));
     }
 
     @AfterEach
     public void tearDown() {
+        new TransferDaoTestHelper(create(JDBC_URL)).clearDb();
         stop();
+        awaitStop();
     }
 
     public static TestResponse request(String method, String path) {
@@ -70,7 +82,9 @@ public class ApplicationTest {
             connection.setRequestMethod(method);
             connection.setDoOutput(true);
             connection.connect();
-            String body = IOUtils.toString(connection.getInputStream());
+            String body = IOUtils.toString(
+                connection.getResponseCode() == 200 ?
+                    connection.getInputStream() : connection.getErrorStream());
             return new TestResponse(connection.getResponseCode(), body);
         } catch (IOException e) {
             e.printStackTrace();

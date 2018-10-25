@@ -1,5 +1,6 @@
 package com.dev.moneytransfer;
 
+import com.dev.moneytransfer.dao.TransferDao;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
@@ -12,6 +13,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A service to safely transfer money between 2 accounts.
+ * The implementation of the service prevents deadlocks and transaction races
+ * in the backing datastore by locking access to affected accounts.
+ */
 @Singleton
 public class TransferService {
 
@@ -56,7 +62,7 @@ public class TransferService {
                 }
             }
         }
-        log.info("Transfer %s of %s from %s to %s", transferId, amount, acctFrom, acctTo);
+        log.info("Transfer {} of {} from {} to {}", transferId, amount, acctFrom, acctTo);
         return transferId;
     }
 

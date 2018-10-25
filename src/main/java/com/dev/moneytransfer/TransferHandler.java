@@ -12,7 +12,13 @@ import java.math.BigDecimal;
 
 import static java.lang.String.valueOf;
 
-
+/**
+ * A Spark handler to process money transfer request.
+ * Produces:
+ * - status=200, body=<TransferID> - money transferred
+ * - status=400, body=<ErrorMessage> - bad request
+ * - status=500, body=Internal server error
+ */
 @Singleton
 public class TransferHandler implements Route {
 

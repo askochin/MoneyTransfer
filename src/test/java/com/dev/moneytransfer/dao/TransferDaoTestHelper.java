@@ -1,13 +1,14 @@
 package com.dev.moneytransfer.dao;
 
-import com.dev.moneytransfer.DbUtil;
+import com.google.common.io.Resources;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.dev.moneytransfer.DbUtil.INTERNAL_SCRIPT;
+import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.io.Resources.getResource;
 
 public class TransferDaoTestHelper {
 
@@ -18,8 +19,9 @@ public class TransferDaoTestHelper {
     }
 
     public void initSchema() throws IOException {
-        DbUtil.initDb(jdbi, INTERNAL_SCRIPT);
-   }
+        String scriptContent = Resources.toString(getResource("schema.sql"), UTF_8);
+        jdbi.useHandle(handle -> handle.createScript(scriptContent).execute());
+    }
 
     public void clearDb() {
         jdbi.useHandle(handle -> handle.createUpdate("drop all objects").execute());

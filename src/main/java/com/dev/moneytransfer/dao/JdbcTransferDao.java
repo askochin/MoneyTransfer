@@ -1,4 +1,4 @@
-package com.dev.moneytransfer;
+package com.dev.moneytransfer.dao;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -13,15 +13,22 @@ import static java.util.stream.Stream.of;
 import static org.jdbi.v3.core.transaction.TransactionIsolationLevel.READ_COMMITTED;
 
 @Singleton
-public class TransferDao {
+public class JdbcTransferDao implements TransferDao {
 
     private final Jdbi jdbi;
 
     @Inject
-    TransferDao(Jdbi jdbi) {
+    public JdbcTransferDao(Jdbi jdbi) {
         this.jdbi = jdbi;
     }
 
+    /**
+     * Transfer amount of money from acctFrom to acctTo.
+     * The order of account record update is not guaranteed.
+     * @return The ID of transfer
+     * @throws IllegalArgumentException if any account is not found or there's not sufficient funds on acctFrom
+     */
+    @Override
     public long transfer(String acctFrom, String acctTo, BigDecimal amount) {
 
         return jdbi.inTransaction(READ_COMMITTED, handle -> {

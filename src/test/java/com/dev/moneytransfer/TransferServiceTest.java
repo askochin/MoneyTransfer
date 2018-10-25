@@ -1,5 +1,6 @@
 package com.dev.moneytransfer;
 
+import com.dev.moneytransfer.dao.JdbcTransferDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.*;
 class TransferServiceTest {
 
     @Mock
-    private TransferDao dao;
+    private JdbcTransferDao dao;
 
     private TransferService service;
 
