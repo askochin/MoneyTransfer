@@ -12,10 +12,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static com.google.common.io.Resources.getResource;
 import static java.lang.String.valueOf;
 import static java.lang.System.setProperty;
+import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.jdbi.v3.core.Jdbi.create;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -49,7 +53,7 @@ public class ApplicationIntegrationTest {
     }
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws InterruptedException, ExecutionException, TimeoutException {
 
         // init application properties
         setProperty("port", valueOf(PORT));
@@ -60,7 +64,7 @@ public class ApplicationIntegrationTest {
         // run application
         Application app = new Application();
         app.run();
-        awaitInitialization();
+        runAsync(() -> awaitInitialization()).get(15, SECONDS);
 
         // add test data
         new TransferDaoTestHelper(create(JDBC_URL))
@@ -68,10 +72,10 @@ public class ApplicationIntegrationTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws InterruptedException, ExecutionException, TimeoutException {
         new TransferDaoTestHelper(create(JDBC_URL)).clearDb();
         stop();
-        awaitStop();
+        runAsync(() -> awaitStop()).get(15, SECONDS);
     }
 
     public static TestResponse request(String method, String path) {
